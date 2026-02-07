@@ -1,0 +1,71 @@
+name: Build STLmuokkaus (Windows + macOS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-windows:
+    name: Build Windows (.exe)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build with PyInstaller (folder)
+        run: |
+          pyinstaller --noconfirm --clean --windowed --name STLmuokkaus stlmuokkaus.py
+
+      - name: Zip Windows dist folder
+        run: |
+          powershell -Command "Compress-Archive -Path dist\STLmuokkaus -DestinationPath STLmuokkaus-windows.zip -Force"
+
+      - name: Upload artifact (Windows)
+        uses: actions/upload-artifact@v4
+        with:
+          name: STLmuokkaus-windows
+          path: STLmuokkaus-windows.zip
+
+  build-macos:
+    name: Build macOS (.app)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --noconfirm --clean --windowed --name STLmuokkaus stlmuokkaus.py
+
+      - name: Zip .app
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent "dist/STLmuokkaus.app" "STLmuokkaus-mac.zip"
+
+      - name: Upload artifact (macOS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: STLmuokkaus-mac
+          path: STLmuokkaus-mac.zip
